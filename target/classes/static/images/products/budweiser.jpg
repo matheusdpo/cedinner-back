@@ -1,0 +1,5 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#E74C3C"/>
+  <text x="50%" y="45%" font-family="Arial" font-size="90" fill="white" text-anchor="middle">🍺</text>
+  <text x="50%" y="70%" font-family="Arial" font-size="24" font-weight="bold" fill="white" text-anchor="middle">Budweiser</text>
+</svg>

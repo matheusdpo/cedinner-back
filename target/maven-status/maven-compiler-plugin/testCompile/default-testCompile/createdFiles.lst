@@ -1,0 +1,4 @@
+br/com/matheusdpo/cedinner/application/usecases/CreateOrderUseCaseTest.class
+br/com/matheusdpo/cedinner/domain/entities/OrderTest.class
+br/com/matheusdpo/cedinner/domain/valueobjects/OrderStatusTest.class
+br/com/matheusdpo/cedinner/CedinnerApplicationTests.class

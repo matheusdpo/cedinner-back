@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Order - Cedinner</title>
+    <link rel="stylesheet" th:href="@{/css/modern-style.css}">
+</head>
+<body class="modern-body">
+    <!-- Modern Navigation -->
+    <nav class="modern-nav">
+        <div class="nav-content">
+            <div class="nav-left">
+                <a th:href="@{/orders}" class="back-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <h1 class="page-title">Menu</h1>
+            </div>
+            <div class="nav-right">
+                <button class="cart-btn" onclick="toggleCart()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    <span class="cart-count" id="cartCount">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="modern-container">
+        <!-- Category Filter -->
+        <div class="category-filter">
+            <button class="category-btn active" onclick="filterCategory('all')">Todos</button>
+            <button class="category-btn" onclick="filterCategory('Hamburguer')">🍔 Hamburgueres</button>
+            <button class="category-btn" onclick="filterCategory('Acompanhamento')">🍟 Acompanhamentos</button>
+            <button class="category-btn" onclick="filterCategory('Bebida - Energy')">⚡ Energéticos</button>
+            <button class="category-btn" onclick="filterCategory('Bebida - Alcoólica')">🍺 Alcoólicas</button>
+            <button class="category-btn" onclick="filterCategory('Bebida - Refrigerante')">🥤 Refrigerantes</button>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="products-grid">
+            <div th:each="product : ${products}" 
+                 th:attr="data-category=${product.category}"
+                 class="product-card"
+                 onclick="openProductModal(this)"
+                 th:data-id="${product.id}"
+                 th:data-name="${product.name}"
+                 th:data-description="${product.description}"
+                 th:data-price="${product.price}"
+                 th:data-image="${product.imageUrl}"
+                 th:data-addable="${product.addableItems}"
+                 th:data-removable="${product.removableItems}">
+                
+                <div class="product-image">
+                    <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+                    <div class="product-badge" th:if="${!product.available}">Unavailable</div>
+                </div>
+                
+                <div class="product-info">
+                    <h3 class="product-name" th:text="${product.name}"></h3>
+                    <p class="product-description" th:text="${product.description}"></p>
+                    <div class="product-footer">
+                        <span class="product-price">$<span th:text="${#numbers.formatDecimal(product.price, 1, 2)}"></span></span>
+                        <button class="add-btn" th:disabled="${!product.available}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-overlay" onclick="closeProductModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeProductModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            
+            <div class="modal-header">
+                <img id="modalImage" src="" alt="" />
+            </div>
+            
+            <div class="modal-body">
+                <h2 id="modalName"></h2>
+                <p id="modalDescription"></p>
+                
+                <!-- Add Items -->
+                <div class="customization-section" id="addItemsSection" style="display:none;">
+                    <h4>Add extras</h4>
+                    <div class="options-grid" id="addItemsOptions"></div>
+                </div>
+                
+                <!-- Remove Items -->
+                <div class="customization-section" id="removeItemsSection" style="display:none;">
+                    <h4>Remove</h4>
+                    <div class="options-grid" id="removeItemsOptions"></div>
+                </div>
+                
+                <!-- Special Instructions -->
+                <div class="customization-section">
+                    <h4>Special instructions</h4>
+                    <textarea id="specialInstructions" 
+                             placeholder="Any special requests? (e.g., extra crispy, no salt, etc.)"
+                             rows="3"></textarea>
+                </div>
+                
+                <!-- Quantity and Add to Cart -->
+                <div class="modal-footer">
+                    <div class="quantity-selector">
+                        <button onclick="decreaseQuantity()">−</button>
+                        <span id="quantity">1</span>
+                        <button onclick="increaseQuantity()">+</button>
+                    </div>
+                    <button class="add-to-cart-btn" onclick="addToCart()">
+                        Add to cart - $<span id="totalPrice">0.00</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping Cart Sidebar -->
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h2>Your Order</h2>
+            <button class="cart-close" onclick="toggleCart()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="cart-items" id="cartItems">
+            <div class="empty-cart">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                <p>Your cart is empty</p>
+            </div>
+        </div>
+        
+        <div class="cart-footer">
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="cartSubtotal">$0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span id="cartTotal">$0.00</span>
+                </div>
+            </div>
+            <button class="checkout-btn" onclick="proceedToCheckout()" disabled id="checkoutBtn">
+                Proceed to Checkout
+            </button>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const userId = /*[[${userId}]]*/ null;
+        const userAddress = /*[[${userAddress}]]*/ '';
+        
+        let cart = [];
+        let currentProduct = null;
+        let currentQuantity = 1;
+        
+        function filterCategory(category) {
+            const cards = document.querySelectorAll('.product-card');
+            const buttons = document.querySelectorAll('.category-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function openProductModal(card) {
+            currentProduct = {
+                id: card.dataset.id,
+                name: card.dataset.name,
+                description: card.dataset.description,
+                price: parseFloat(card.dataset.price),
+                image: card.dataset.image,
+                addableItems: card.dataset.addable ? card.dataset.addable.split(',') : [],
+                removableItems: card.dataset.removable ? card.dataset.removable.split(',') : []
+            };
+            
+            currentQuantity = 1;
+            
+            document.getElementById('modalImage').src = currentProduct.image;
+            document.getElementById('modalName').textContent = currentProduct.name;
+            document.getElementById('modalDescription').textContent = currentProduct.description;
+            document.getElementById('quantity').textContent = '1';
+            document.getElementById('totalPrice').textContent = currentProduct.price.toFixed(2);
+            document.getElementById('specialInstructions').value = '';
+            
+            // Setup add items
+            const addSection = document.getElementById('addItemsSection');
+            const addOptions = document.getElementById('addItemsOptions');
+            addOptions.innerHTML = '';
+            
+            if (currentProduct.addableItems.length > 0 && currentProduct.addableItems[0]) {
+                addSection.style.display = 'block';
+                currentProduct.addableItems.forEach(item => {
+                    if (item.trim()) {
+                        const option = document.createElement('label');
+                        option.className = 'option-item';
+                        option.innerHTML = `
+                            <input type="checkbox" name="addItem" value="${item.trim()}">
+                            <span>${item.trim()}</span>
+                        `;
+                        addOptions.appendChild(option);
+                    }
+                });
+            } else {
+                addSection.style.display = 'none';
+            }
+            
+            // Setup remove items
+            const removeSection = document.getElementById('removeItemsSection');
+            const removeOptions = document.getElementById('removeItemsOptions');
+            removeOptions.innerHTML = '';
+            
+            if (currentProduct.removableItems.length > 0 && currentProduct.removableItems[0]) {
+                removeSection.style.display = 'block';
+                currentProduct.removableItems.forEach(item => {
+                    if (item.trim()) {
+                        const option = document.createElement('label');
+                        option.className = 'option-item';
+                        option.innerHTML = `
+                            <input type="checkbox" name="removeItem" value="${item.trim()}">
+                            <span>No ${item.trim()}</span>
+                        `;
+                        removeOptions.appendChild(option);
+                    }
+                });
+            } else {
+                removeSection.style.display = 'none';
+            }
+            
+            document.getElementById('productModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeProductModal() {
+            document.getElementById('productModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function increaseQuantity() {
+            currentQuantity++;
+            document.getElementById('quantity').textContent = currentQuantity;
+            updateTotalPrice();
+        }
+        
+        function decreaseQuantity() {
+            if (currentQuantity > 1) {
+                currentQuantity--;
+                document.getElementById('quantity').textContent = currentQuantity;
+                updateTotalPrice();
+            }
+        }
+        
+        function updateTotalPrice() {
+            const total = (currentProduct.price * currentQuantity).toFixed(2);
+            document.getElementById('totalPrice').textContent = total;
+        }
+        
+        function addToCart() {
+            const addedItems = Array.from(document.querySelectorAll('input[name="addItem"]:checked'))
+                .map(cb => cb.value).join(',');
+            const removedItems = Array.from(document.querySelectorAll('input[name="removeItem"]:checked'))
+                .map(cb => cb.value).join(',');
+            const instructions = document.getElementById('specialInstructions').value;
+            
+            const cartItem = {
+                productId: currentProduct.id,
+                name: currentProduct.name,
+                price: currentProduct.price,
+                quantity: currentQuantity,
+                addedItems: addedItems,
+                removedItems: removedItems,
+                specialInstructions: instructions
+            };
+            
+            cart.push(cartItem);
+            updateCart();
+            closeProductModal();
+            
+            // Show success feedback
+            showToast('Added to cart!');
+        }
+        
+        function updateCart() {
+            const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cartCount').textContent = cartCount;
+            document.getElementById('cartCount').style.display = cartCount > 0 ? 'flex' : 'none';
+            
+            const cartItems = document.getElementById('cartItems');
+            
+            if (cart.length === 0) {
+                cartItems.innerHTML = `
+                    <div class="empty-cart">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                        <p>Your cart is empty</p>
+                    </div>
+                `;
+                document.getElementById('checkoutBtn').disabled = true;
+            } else {
+                cartItems.innerHTML = cart.map((item, index) => `
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <h4>${item.name}</h4>
+                            ${item.addedItems ? `<p class="customization">+ ${item.addedItems}</p>` : ''}
+                            ${item.removedItems ? `<p class="customization">- ${item.removedItems}</p>` : ''}
+                            ${item.specialInstructions ? `<p class="customization">${item.specialInstructions}</p>` : ''}
+                            <p class="item-price">$${item.price.toFixed(2)} × ${item.quantity}</p>
+                        </div>
+                        <button class="remove-item" onclick="removeFromCart(${index})">×</button>
+                    </div>
+                `).join('');
+                document.getElementById('checkoutBtn').disabled = false;
+            }
+            
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('cartSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('cartTotal').textContent = `$${subtotal.toFixed(2)}`;
+        }
+        
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+        
+        function toggleCart() {
+            document.getElementById('cartSidebar').classList.toggle('active');
+        }
+        
+        function proceedToCheckout() {
+            if (cart.length === 0) return;
+            
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/orders/create';
+            
+            // Add userId
+            const userIdInput = document.createElement('input');
+            userIdInput.type = 'hidden';
+            userIdInput.name = 'userId';
+            userIdInput.value = userId;
+            form.appendChild(userIdInput);
+            
+            // Add delivery address
+            const addressInput = document.createElement('input');
+            addressInput.type = 'hidden';
+            addressInput.name = 'deliveryAddress';
+            const address = userAddress || prompt('Digite seu endereço de entrega:');
+            if (!address || address.trim() === '') {
+                alert('Endereço de entrega é obrigatório!');
+                return;
+            }
+            addressInput.value = address;
+            form.appendChild(addressInput);
+            
+            // Add items
+            cart.forEach((item, index) => {
+                const productIdInput = document.createElement('input');
+                productIdInput.type = 'hidden';
+                productIdInput.name = `items[${index}].productId`;
+                productIdInput.value = item.productId;
+                form.appendChild(productIdInput);
+                
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'hidden';
+                quantityInput.name = `items[${index}].quantity`;
+                quantityInput.value = item.quantity;
+                form.appendChild(quantityInput);
+                
+                if (item.addedItems) {
+                    const addedInput = document.createElement('input');
+                    addedInput.type = 'hidden';
+                    addedInput.name = `items[${index}].addedItems`;
+                    addedInput.value = item.addedItems;
+                    form.appendChild(addedInput);
+                }
+                
+                if (item.removedItems) {
+                    const removedInput = document.createElement('input');
+                    removedInput.type = 'hidden';
+                    removedInput.name = `items[${index}].removedItems`;
+                    removedInput.value = item.removedItems;
+                    form.appendChild(removedInput);
+                }
+                
+                if (item.specialInstructions) {
+                    const instructionsInput = document.createElement('input');
+                    instructionsInput.type = 'hidden';
+                    instructionsInput.name = `items[${index}].specialInstructions`;
+                    instructionsInput.value = item.specialInstructions;
+                    form.appendChild(instructionsInput);
+                }
+            });
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
+

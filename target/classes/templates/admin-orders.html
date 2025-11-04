@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - All Orders - Cedinner Burger</title>
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+</head>
+<body class="admin-body">
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>🍔 Cedinner Burger - Admin Panel</h1>
+                <p class="subtitle">All Orders (Oldest First)</p>
+            </div>
+            <div class="header-right">
+                <span class="order-count" th:text="${orders.size()} + ' Pedidos'"></span>
+                <button class="refresh-btn" onclick="location.reload()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                    Atualizar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <!-- Empty State -->
+            <div th:if="${orders.isEmpty()}" class="empty-state">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="1">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                <h2>Nenhum pedido ainda</h2>
+                <p>Quando os clientes fizerem pedidos, eles aparecerão aqui.</p>
+            </div>
+
+            <!-- Orders Table -->
+            <div th:if="${!orders.isEmpty()}" class="orders-table-container">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Data/Hora</th>
+                            <th>Cliente (ID)</th>
+                            <th>Items</th>
+                            <th>Endereço</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="order, iterStat : ${orders}" 
+                            th:class="${iterStat.index % 2 == 0 ? 'row-even' : 'row-odd'}">
+                            <!-- Order Number -->
+                            <td>
+                                <div class="order-number">#<span th:text="${order.id}"></span></div>
+                                <div class="order-position" th:text="'Posição: ' + ${iterStat.index + 1}"></div>
+                            </td>
+                            
+                            <!-- Date/Time -->
+                            <td>
+                                <div class="datetime">
+                                    <div class="date" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy')}"></div>
+                                    <div class="time" th:text="${#temporals.format(order.createdAt, 'HH:mm:ss')}"></div>
+                                </div>
+                            </td>
+                            
+                            <!-- Customer -->
+                            <td>
+                                <div class="customer-id">User ID: <span th:text="${order.userId}"></span></div>
+                            </td>
+                            
+                            <!-- Items -->
+                            <td>
+                                <div class="items-list">
+                                    <div th:each="item : ${order.items}" class="item-summary">
+                                        <strong><span th:text="${item.quantity}"></span>x <span th:text="${item.productName}"></span></strong>
+                                        <div th:if="${item.addedItems != null && !item.addedItems.isEmpty()}" 
+                                             class="item-custom add">
+                                            + <span th:text="${item.addedItems}"></span>
+                                        </div>
+                                        <div th:if="${item.removedItems != null && !item.removedItems.isEmpty()}" 
+                                             class="item-custom remove">
+                                            - <span th:text="${item.removedItems}"></span>
+                                        </div>
+                                        <div th:if="${item.specialInstructions != null && !item.specialInstructions.isEmpty()}" 
+                                             class="item-custom note">
+                                            📝 <span th:text="${item.specialInstructions}"></span>
+                                        </div>
+                                    </div>
+                                    <div th:if="${order.notes != null && !order.notes.isEmpty()}" 
+                                         class="order-notes">
+                                        💬 Obs: <span th:text="${order.notes}"></span>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Address -->
+                            <td>
+                                <div class="address" th:text="${order.deliveryAddress}"></div>
+                            </td>
+                            
+                            <!-- Status -->
+                            <td>
+                                <span class="status-badge" 
+                                      th:classappend="${'status-' + order.status.name().toLowerCase()}"
+                                      th:text="${order.status.description}"></span>
+                            </td>
+                            
+                            <!-- Total -->
+                            <td>
+                                <div class="order-total">R$ <span th:text="${#numbers.formatDecimal(order.total, 1, 2)}"></span></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Summary Cards -->
+            <div th:if="${!orders.isEmpty()}" class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-content">
+                        <div class="card-value" th:text="${orders.size()}"></div>
+                        <div class="card-label">Total de Pedidos</div>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="card-icon">⏱️</div>
+                    <div class="card-content">
+                        <div class="card-value" 
+                             th:text="${#temporals.format(orders.get(0).createdAt, 'HH:mm')}"></div>
+                        <div class="card-label">Primeiro Pedido</div>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="card-icon">🕐</div>
+                    <div class="card-content">
+                        <div class="card-value" 
+                             th:text="${#temporals.format(orders.get(orders.size() - 1).createdAt, 'HH:mm')}"></div>
+                        <div class="card-label">Último Pedido</div>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="card-icon">💰</div>
+                    <div class="card-content">
+                        <div class="card-value">
+                            R$ <span th:text="${#numbers.formatDecimal(#aggregates.sum(orders.![total]), 1, 2)}"></span>
+                        </div>
+                        <div class="card-label">Total em Vendas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auto refresh every 30 seconds
+        setTimeout(() => location.reload(), 30000);
+    </script>
+</body>
+</html>
+

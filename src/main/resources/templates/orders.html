@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - Cedinner Delivery</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>🍕 Cedinner Delivery</h2>
+            </div>
+            <div class="nav-menu">
+                <span class="nav-user">Welcome, <span th:text="${username}"></span>!</span>
+                <a th:href="@{/orders}" class="nav-link active">My Orders</a>
+                <a th:href="@{/orders/new}" class="nav-link">New Order</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>My Orders</h1>
+            <a th:href="@{/orders/new}" class="btn btn-primary">+ New Order</a>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <div th:if="${orders.isEmpty()}" class="empty-state">
+            <p>📦 You don't have any orders yet.</p>
+            <a th:href="@{/orders/new}" class="btn btn-primary">Create your first order</a>
+        </div>
+
+        <div th:if="${!orders.isEmpty()}" class="orders-grid">
+            <div th:each="order : ${orders}" class="order-card">
+                <div class="order-header">
+                    <div>
+                        <span class="order-id">Order #<span th:text="${order.id}"></span></span>
+                        <span class="order-status" th:classappend="${'status-' + order.status.name().toLowerCase()}" 
+                              th:text="${order.status.description}"></span>
+                    </div>
+                    <span class="order-date" th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                </div>
+
+                <div class="order-body">
+                    <div class="order-info">
+                        <p><strong>Delivery Address:</strong> <span th:text="${order.deliveryAddress}"></span></p>
+                        <p th:if="${order.notes}"><strong>Notes:</strong> <span th:text="${order.notes}"></span></p>
+                    </div>
+
+                    <div class="order-items">
+                        <h4>Items:</h4>
+                        <ul>
+                            <li th:each="item : ${order.items}">
+                                <span th:text="${item.quantity}"></span>x 
+                                <span th:text="${item.productName}"></span> - 
+                                $<span th:text="${#numbers.formatDecimal(item.subtotal, 1, 2)}"></span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="order-total">
+                        <strong>Total: $<span th:text="${#numbers.formatDecimal(order.total, 1, 2)}"></span></strong>
+                    </div>
+                </div>
+
+                <div class="order-actions">
+                    <a th:href="@{/orders/{id}/edit(id=${order.id})}" 
+                       th:if="${order.status.name() == 'PENDING'}"
+                       class="btn btn-secondary btn-sm">Edit</a>
+                    
+                    <form th:action="@{/orders/{id}/delete(id=${order.id})}" method="post" 
+                          th:if="${order.status.name() == 'PENDING' or order.status.name() == 'CANCELLED'}"
+                          style="display: inline;"
+                          onsubmit="return confirm('Are you sure you want to delete this order?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

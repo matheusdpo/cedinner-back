@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Order - Cedinner Delivery</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>🍕 Cedinner Delivery</h2>
+            </div>
+            <div class="nav-menu">
+                <span class="nav-user">Welcome, <span th:text="${username}"></span>!</span>
+                <a th:href="@{/orders}" class="nav-link">My Orders</a>
+                <a th:href="@{/orders/new}" class="nav-link">New Order</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Edit Order #<span th:text="${order.id}"></span></h1>
+            <a th:href="@{/orders}" class="btn btn-secondary">← Back to Orders</a>
+        </div>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <form id="orderForm" th:action="@{/orders/{id}/update(id=${order.id})}" method="post" class="order-form">
+            <div class="form-section">
+                <h3>Order Information</h3>
+                
+                <div class="form-group">
+                    <label>Created At</label>
+                    <input type="text" class="form-control" 
+                           th:value="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}" 
+                           disabled>
+                </div>
+
+                <div class="form-group">
+                    <label>Current Status</label>
+                    <input type="text" class="form-control" 
+                           th:value="${order.status.description}" 
+                           disabled>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Delivery Information</h3>
+                
+                <div class="form-group">
+                    <label for="deliveryAddress">Delivery Address *</label>
+                    <textarea id="deliveryAddress" name="deliveryAddress" class="form-control" 
+                              rows="3" required th:text="${order.deliveryAddress}"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes (optional)</label>
+                    <textarea id="notes" name="notes" class="form-control" 
+                              rows="2" th:text="${order.notes}"></textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Order Items</h3>
+                
+                <div id="items-container">
+                    <div th:each="item, iterStat : ${order.items}" class="item-row">
+                        <div class="form-group">
+                            <label>Product *</label>
+                            <select th:name="'items[' + ${iterStat.index} + '].productId'" class="form-control product-select" required>
+                                <option value="">Select a product</option>
+                                <option th:each="product : ${products}" 
+                                        th:value="${product.id}" 
+                                        th:text="${product.name + ' - $' + #numbers.formatDecimal(product.price, 1, 2)}"
+                                        th:selected="${product.id == item.productId}"
+                                        th:disabled="${!product.available}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity *</label>
+                            <input type="number" th:name="'items[' + ${iterStat.index} + '].quantity'" 
+                                   class="form-control" min="1" th:value="${item.quantity}" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-danger btn-sm remove-item" 
+                                    onclick="removeItem(this)" style="margin-top: 28px;">Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-secondary" onclick="addItem()">+ Add Another Product</button>
+            </div>
+
+            <div class="form-section">
+                <h3>Current Total</h3>
+                <div class="order-total-display">
+                    $<span th:text="${#numbers.formatDecimal(order.total, 1, 2)}"></span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">Update Order</button>
+                <a th:href="@{/orders}" class="btn btn-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        let itemCount = /*[[${order.items.size()}]]*/ 0;
+        const products = /*[[${products}]]*/ [];
+
+        function addItem() {
+            const container = document.getElementById('items-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row';
+            
+            let productsOptions = '<option value="">Select a product</option>';
+            products.forEach(product => {
+                const disabled = !product.available ? 'disabled' : '';
+                productsOptions += `<option value="${product.id}" ${disabled}>${product.name} - $${product.price.toFixed(2)}</option>`;
+            });
+            
+            newRow.innerHTML = `
+                <div class="form-group">
+                    <label>Product *</label>
+                    <select name="items[${itemCount}].productId" class="form-control product-select" required>
+                        ${productsOptions}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity *</label>
+                    <input type="number" name="items[${itemCount}].quantity" class="form-control" 
+                           min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-danger btn-sm remove-item" onclick="removeItem(this)" style="margin-top: 28px;">Remove</button>
+                </div>
+            `;
+            
+            container.appendChild(newRow);
+            itemCount++;
+        }
+
+        function removeItem(button) {
+            const itemRow = button.closest('.item-row');
+            const container = document.getElementById('items-container');
+            
+            if (container.children.length > 1) {
+                itemRow.remove();
+                reindexItems();
+            } else {
+                alert('You must have at least one item in the order.');
+            }
+        }
+
+        function reindexItems() {
+            const container = document.getElementById('items-container');
+            const rows = container.querySelectorAll('.item-row');
+            
+            rows.forEach((row, index) => {
+                const productSelect = row.querySelector('select');
+                const quantityInput = row.querySelector('input[type="number"]');
+                
+                productSelect.name = `items[${index}].productId`;
+                quantityInput.name = `items[${index}].quantity`;
+            });
+            
+            itemCount = rows.length;
+        }
+    </script>
+</body>
+</html>
+

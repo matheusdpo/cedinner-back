@@ -1,0 +1,4 @@
+/home/matheus/Documents/Projects/cedinner-back/src/test/java/br/com/matheusdpo/cedinner/CedinnerApplicationTests.java
+/home/matheus/Documents/Projects/cedinner-back/src/test/java/br/com/matheusdpo/cedinner/application/usecases/CreateOrderUseCaseTest.java
+/home/matheus/Documents/Projects/cedinner-back/src/test/java/br/com/matheusdpo/cedinner/domain/entities/OrderTest.java
+/home/matheus/Documents/Projects/cedinner-back/src/test/java/br/com/matheusdpo/cedinner/domain/valueobjects/OrderStatusTest.java
